@@ -1,33 +1,36 @@
-# resolve.exports [![CI](https://github.com/lukeed/resolve.exports/workflows/CI/badge.svg)](https://github.com/lukeed/resolve.exports/actions) [![codecov](https://badgen.net/codecov/c/github/lukeed/resolve.exports)](https://codecov.io/gh/lukeed/resolve.exports)
+# resolve.imports [![CI](https://github.com/okikio/resolve.imports/workflows/CI/badge.svg)](https://github.com/okikio/resolve.imports/actions) [![codecov](https://badgen.net/codecov/c/github/okikio/resolve.imports)](https://codecov.io/gh/okikio/resolve.imports)
 
-> A tiny (737b), correct, general-purpose, and configurable `"exports"` resolver without file-system reliance
+> A tiny (737b), correct, general-purpose, and configurable subpath `"imports"` resolver without file-system reliance. A fork of [`resolve.exports`](https://github.com/lukeed/resolve.exports), but for `imports`.
+>
+
+> **Warning**: Unlike `resolve.exports`, `resolve.imports` doesn't have a default entry. This means that you must be explicit about the subpath to resolve
 
 ***Why?***
 
 Hopefully, this module may serve as a reference point (and/or be used directly) so that the varying tools and bundlers within the ecosystem can share a common approach with one another **as well as** with the native Node.js implementation.
 
-With the push for ESM, we must be _very_ careful and avoid fragmentation. If we, as a community, begin propagating different _dialects_ of `"exports"` resolution, then we're headed for deep trouble. It will make supporting (and using) `"exports"` nearly impossible, which may force its abandonment and along with it, its benefits.
+With the push for ESM, we must be _very_ careful and avoid fragmentation. If we, as a community, begin propagating different _dialects_ of `"imports"` resolution, then we're headed for deep trouble. It will make supporting (and using) `"imports"` nearly impossible, which may force its abandonment and along with it, its benefits.
 
 Let's have nice things.
 
 ***TODO***
 
-- [x] exports string
-- [x] exports object (single entry)
-- [x] exports object (multi entry)
+- [x] imports string
+- [x] imports object (single entry)
+- [x] imports object (multi entry)
 - [x] nested / recursive conditions
-- [x] exports arrayable
-- [x] directory mapping (`./foobar/` => `/foobar/`)
-- [x] directory mapping (`./foobar/*` => `./other/*.js`)
+- [x] imports arrayable
+- [x] directory mapping (`#foobar/` => `/foobar/`)
+- [x] directory mapping (`#foobar/*` => `./other/*.js`)
 - [x] directory mapping w/ conditions
 - [x] directory mapping w/ nested conditions
-- [x] legacy fields (`main` vs `module` vs ...)
-- [x] legacy "browser" files object
+- [ ] ~~legacy fields (`main` vs `module` vs ...)~~
+- [ ] ~~legacy "browser" files object~~
 
 ## Install
 
 ```sh
-$ npm install resolve.exports
+$ npm install resolve.imports
 ```
 
 ## Usage
@@ -35,18 +38,18 @@ $ npm install resolve.exports
 > Please see [`/test/`](/test) for examples.
 
 ```js
-import { resolve, legacy } from 'resolve.exports';
+import { resolve, legacy } from 'resolve.imports';
 
 const contents = {
   "name": "foobar",
   "module": "dist/module.mjs",
   "main": "dist/require.js",
-  "exports": {
-    ".": {
+  "imports": {
+    "#deps": {
       "import": "./dist/module.mjs",
       "require": "./dist/require.js"
     },
-    "./lite": {
+    "#lite": {
       "worker": {
         "browser": "./lite/worker.brower.js",
         "node": "./lite/worker.node.js"
@@ -57,48 +60,28 @@ const contents = {
   }
 };
 
-// Assumes `.` as default entry
-// Assumes `import` as default condition
-resolve(contents); //=> "./dist/module.mjs"
-
-// entry: nullish === "foobar" === "."
-resolve(contents, 'foobar'); //=> "./dist/module.mjs"
-resolve(contents, '.'); //=> "./dist/module.mjs"
-
-// entry: "foobar/lite" === "./lite"
-resolve(contents, 'foobar/lite'); //=> "./lite/module.mjs"
-resolve(contents, './lite'); //=> "./lite/module.mjs"
+// be explicit about the subpath to resolve, unlike `resolve.exports` 
+// there is no default entry
+resolve(contents, '#lite'); //=> "./lite/module.mjs"
 
 // Assume `require` usage
-resolve(contents, 'foobar', { require: true }); //=> "./dist/require.js"
-resolve(contents, './lite', { require: true }); //=> "./lite/require.js"
+resolve(contents, '#deps', { require: true }); //=> "./dist/require.js"
+resolve(contents, '#lite', { require: true }); //=> "./lite/require.js"
 
 // Throws "Missing <entry> export in <name> package" Error
 resolve(contents, 'foobar/hello');
 resolve(contents, './hello/world');
 
 // Add custom condition(s)
-resolve(contents, 'foobar/lite', {
+resolve(contents, '#lite', {
   conditions: ['worker']
 }); // => "./lite/worker.node.js"
 
 // Toggle "browser" condition
-resolve(contents, 'foobar/lite', {
+resolve(contents, '#lite', {
   conditions: ['worker'],
   browser: true
 }); // => "./lite/worker.browser.js"
-
-// ---
-// Legacy
-// ---
-
-// prefer "module" > "main" (default)
-legacy(contents); //=> "dist/module.mjs"
-
-// customize fields order
-legacy(contents, {
-  fields: ['main', 'module']
-}); //=> "dist/require.js"
 ```
 
 ## API
@@ -241,80 +224,6 @@ resolve(contents, {
 //=> Conditions: ["default", "browser", "require", "custom123"]
 ```
 
-
-### legacy(pkg, options?)
-Returns: `string` or `undefined`
-
-Also included is a "legacy" method for resolving non-`"exports"` package fields. This may be used as a fallback method when for when no `"exports"` mapping is defined. In other words, it's completely optional (and tree-shakeable).
-
-You may customize the field priority via [`options.fields`](#optionsfields).
-
-When a field is found, its value is returned _as written_. <br>
-When no fields were found, `undefined` is returned. If you wish to mimic Node.js behavior, you can assume this means `'index.js'` – but this module does not make that assumption for you.
-
-#### options.browser
-Type: `boolean` or `string` <br>
-Default: `false`
-
-When truthy, ensures that the `'browser'` field is part of the acceptable `fields` list.
-
-> **Important:** If your custom [`options.fields`](#optionsfields) value includes `'browser'`, then _your_ order is respected. <br>Otherwise, when truthy, `options.browser` will move `'browser'` to the front of the list, making it the top priority.
-
-When `true` and `"browser"` is an object, then `legacy()` will return the the entire `"browser"` object.
-
-You may also pass a string value, which will be treated as an import/file path. When this is the case and `"browser"` is an object, then `legacy()` may return:
-
-* `false` – if the package author decided a file should be ignored; or
-* your `options.browser` string value – but made relative, if not already
-
-> See the [`"browser" field specification](https://github.com/defunctzombie/package-browser-field-spec) for more information.
-
-#### options.fields
-Type: `string[]` <br>
-Default: `['module', 'main']`
-
-A list of fields to accept. The order of the array determines the priority/importance of each field, with the most important fields at the beginning of the list.
-
-By default, the `legacy()` method will accept any `"module"` and/or "main" fields if they are defined. However, if both fields are defined, then "module" will be returned.
-
-```js
-const contents = {
-  "name": "...",
-  "worker": "worker.js",
-  "module": "module.mjs",
-  "browser": "browser.js",
-  "main": "main.js",
-}
-
-legacy(contents);
-// fields = [module, main]
-//=> "module.mjs"
-
-legacy(contents, { browser: true });
-// fields = [browser, module, main]
-//=> "browser.mjs"
-
-legacy(contents, {
-  fields: ['missing', 'worker', 'module', 'main']
-});
-// fields = [missing, worker, module, main]
-//=> "worker.js"
-
-legacy(contents, {
-  fields: ['missing', 'worker', 'module', 'main'],
-  browser: true,
-});
-// fields = [browser, missing, worker, module, main]
-//=> "browser.js"
-
-legacy(contents, {
-  fields: ['module', 'browser', 'main'],
-  browser: true,
-});
-// fields = [module, browser, main]
-//=> "module.mjs"
-```
-
 ## License
 
-MIT © [Luke Edwards](https://lukeed.com)
+MIT © [Okiki Ojo](https://okikio.dev)

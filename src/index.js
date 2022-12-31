@@ -1,22 +1,23 @@
+/** Based on `resolve.exports` by @lukeed */
 /**
- * @param {object} exports
+ * @param {object} imports
  * @param {Set<string>} keys
  */
-function loop(exports, keys) {
-	if (typeof exports === 'string') {
-		return exports;
+function loop(imports, keys) {
+	if (typeof imports === 'string') {
+		return imports;
 	}
 
-	if (exports) {
+	if (imports) {
 		let idx, tmp;
-		if (Array.isArray(exports)) {
-			for (idx=0; idx < exports.length; idx++) {
-				if (tmp = loop(exports[idx], keys)) return tmp;
+		if (Array.isArray(imports)) {
+			for (idx=0; idx < imports.length; idx++) {
+				if (tmp = loop(imports[idx], keys)) return tmp;
 			}
 		} else {
-			for (idx in exports) {
+			for (idx in imports) {
 				if (keys.has(idx)) {
-					return loop(exports[idx], keys);
+					return loop(imports[idx], keys);
 				}
 			}
 		}
@@ -25,25 +26,15 @@ function loop(exports, keys) {
 
 /**
  * @param {string} name The package name
- * @param {string} entry The target entry, eg "."
+ * @param {string} entry The target entry, eg "#deps"
  * @param {number} [condition] Unmatched condition?
  */
 function bail(name, entry, condition) {
 	throw new Error(
 		condition
 		? `No known conditions for "${entry}" entry in "${name}" package`
-		: `Missing "${entry}" export in "${name}" package`
+		: `Missing "${entry}" import in "${name}" package`
 	);
-}
-
-/**
- * @param {string} name the package name
- * @param {string} entry the target path/import
- */
-function toName(name, entry) {
-	return entry === name ? '.'
-		: entry[0] === '.' ? entry
-		: entry.replace(new RegExp('^' + name + '\/'), './');
 }
 
 /**
@@ -55,92 +46,51 @@ function toName(name, entry) {
  * @param {string[]} [options.conditions]
  * @param {boolean} [options.unsafe]
  */
-export function resolve(pkg, entry='.', options={}) {
-	let { name, exports } = pkg;
+export function resolve(pkg, entry = null, options={}) {
+	let { name, imports } = pkg;
 
-	if (exports) {
+	if (imports) {
 		let { browser, require, unsafe, conditions=[] } = options;
 
-		let target = toName(name, entry);
-		if (target[0] !== '.') target = './' + target;
+		if (!entry) throw new Error('Missing entry name or import path');
+		if (entry[0] !== '#') throw new Error('Entry is not a valid subpath import; the entry doesn\'t start with "#"');
 
-		if (typeof exports === 'string') {
-			return target === '.' ? exports : bail(name, target);
+		if (typeof imports === 'string') {
+			throw new Error(`Package "imports" must be in object form and cannot be a string`);
 		}
 
 		let allows = new Set(['default', ...conditions]);
 		unsafe || allows.add(require ? 'require' : 'import');
 		unsafe || allows.add(browser ? 'browser' : 'node');
 
-		let key, tmp, isSingle=false;
+		let key, tmp;
 
-		for (key in exports) {
-			isSingle = key[0] !== '.';
-			break;
+		for (key in imports) {
+			if (key[0] !== '#') 
+				throw new Error(`Package "imports" key "${key}" does not start with "#"`);
 		}
 
-		if (isSingle) {
-			return target === '.'
-				? loop(exports, allows) || bail(name, target, 1)
-				: bail(name, target);
+		if (tmp = imports[entry]) {
+			return loop(tmp, allows) || bail(name, entry, 1);
 		}
 
-		if (tmp = exports[target]) {
-			return loop(tmp, allows) || bail(name, target, 1);
-		}
-
-		for (key in exports) {
+		for (key in imports) {
 			tmp = key[key.length - 1];
-			if (tmp === '/' && target.startsWith(key)) {
-				return (tmp = loop(exports[key], allows))
-					? (tmp + target.substring(key.length))
-					: bail(name, target, 1);
+			if (tmp === '/' && entry.startsWith(key)) {
+				return (tmp = loop(imports[key], allows))
+					? (tmp + entry.substring(key.length))
+					: bail(name, entry, 1);
 			}
-			if (tmp === '*' && target.startsWith(key.slice(0, -1))) {
+			if (tmp === '*' && entry.startsWith(key.slice(0, -1))) {
 				// do not trigger if no *content* to inject
-				if (target.substring(key.length - 1).length > 0) {
-					return (tmp = loop(exports[key], allows))
-						? tmp.replace('*', target.substring(key.length - 1))
-						: bail(name, target, 1);
+				if (entry.substring(key.length - 1).length > 0) {
+					return (tmp = loop(imports[key], allows))
+						? tmp.replace('*', entry.substring(key.length - 1))
+						: bail(name, entry, 1);
 				}
 			}
 		}
 
-		return bail(name, target);
-	}
-}
-
-/**
- * @param {object} pkg
- * @param {object} [options]
- * @param {string|boolean} [options.browser]
- * @param {string[]} [options.fields]
- */
-export function legacy(pkg, options={}) {
-	let i=0, value,
-		browser = options.browser,
-		fields = options.fields || ['module', 'main'];
-
-	if (browser && !fields.includes('browser')) {
-		fields.unshift('browser');
-	}
-
-	for (; i < fields.length; i++) {
-		if (value = pkg[fields[i]]) {
-			if (typeof value == 'string') {
-				//
-			} else if (typeof value == 'object' && fields[i] == 'browser') {
-				if (typeof browser == 'string') {
-					value = value[browser=toName(pkg.name, browser)];
-					if (value == null) return browser;
-				}
-			} else {
-				continue;
-			}
-
-			return typeof value == 'string'
-				? ('./' + value.replace(/^\.?\//, ''))
-				: value;
-		}
+		return bail(name, entry);
 	}
 }
