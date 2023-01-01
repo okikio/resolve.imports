@@ -5,6 +5,8 @@
     "type": "git",
     "url": "https://github.com/okikio/resolve.imports.git"
   },
+  "sideEffects": false,
+  "access": "public",
   "description": "A tiny (613b), correct, general-purpose, and configurable subpath \"imports\" resolver without file-system reliance (forked from @lukeed's `resolve.exports`)",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
