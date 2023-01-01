@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/okikio/resolve.imports/compare/v1.0.0...v1.1.0) (2023-01-01)
+
+
+### Features
+
+* fork resolve.exports into resolve.imports for resolving subpath imports ([bd505cd](https://github.com/okikio/resolve.imports/commit/bd505cdd8258010a0f6243b56e402cd6424364d8))
+
 # 1.0.0 (2023-01-01)
 
 
