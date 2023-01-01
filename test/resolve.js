@@ -7,13 +7,22 @@ function pass(pkg, expects, ...args) {
 	assert.is(out, expects);
 }
 
-function fail(pkg, target, ...args) {
+function fail(pkg, target, entry, ...args) {
 	try {
-		$imports.resolve(pkg, ...args);
+		$imports.resolve(pkg, entry, ...args);
 		assert.unreachable();
 	} catch (err) {
 		assert.instance(err, Error);
-		// assert.is(err.message, `Missing "${target}" import in "${pkg.name}" package`);
+
+		if (!entry) {
+			assert.is(err.message, `Missing entry name or import path`);
+		} else if (entry[0] !== '#') {
+			assert.is(err.message, `"${entry}" is not a valid subpath import; the entry doesn\'t start with "#"`);
+		} else if (typeof pkg.imports === 'string') {
+			assert.is(err.message, `package.json "imports" must be an object and cannot be a string`);
+		} else {
+			assert.is(err.message, `Missing "${entry}" import in "${pkg.name}" package`);
+		}
 	}
 }
 
@@ -322,9 +331,9 @@ resolve('imports["#/"]', () => {
 	fail(pkg, './package.json', 'foobar/#/package.json');
 
 	// "loose" / everything exposed
-	fail(pkg, './hello.js', '#/hello.js');
+	pass(pkg, './hello.js', '#/hello.js');
 	fail(pkg, './hello.js', 'foobar/#/hello.js');
-	fail(pkg, './hello/world.js', '#/hello/world.js');
+	pass(pkg, './hello/world.js', '#/hello/world.js');
 });
 
 resolve('imports["#/"] :: w/o "." key', () => {
@@ -364,7 +373,7 @@ resolve('imports["#/*"]', () => {
 
 	pass(pkg, './cheese/hello.mjs', '#/hello');
 	fail(pkg, './cheese/hello.mjs', 'foobar/#/hello');
-	fail(pkg, './cheese/hello/world.mjs', '#/hello/world');
+	pass(pkg, './cheese/hello/world.mjs', '#/hello/world');
 
 	// evaluate as defined, not wrong
 	pass(pkg, './cheese/hello.js.mjs', '#/hello.js');
@@ -418,7 +427,7 @@ resolve('imports["#/features/"] :: with "./" key', () => {
 	pass(pkg, './package.json', '#/package.json');
 
 	// Does NOT hit "./" (match Node)
-	fail(pkg, '.', '#/');
+	pass(pkg, './', '#/');
 	fail(pkg, '.', 'foobar/#/');
 });
 
@@ -518,8 +527,8 @@ resolve('imports["#/features/*"] :: with "./" key', () => {
 	pass(pkg, './package.json', '#/package.json');
 
 	// Does NOT hit "./" (match Node)
-	fail(pkg, '.', '#/');
-	fail(pkg, '.', '#foobar');
+	pass(pkg, './', '#/');
+	fail(pkg, '.', 'foobar');
 });
 
 resolve('imports["#/features/*"] :: conditions', () => {
@@ -579,7 +588,7 @@ resolve('should handle mixed path/conditions', () => {
 	}
 
 	pass(pkg, '$root.import', '#/');
-	fail(pkg, '$root.import', '#/foobar');
+	fail(pkg, '$root.import', '#foobar');
 
 	pass(pkg, '$foo.string', '#/foo');
 	fail(pkg, '$foo.string', 'foobar/#/foo');
