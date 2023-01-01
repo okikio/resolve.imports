@@ -32,7 +32,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm run semantic-release
 
-      - name: Add lib, types and docs to Git
+      - name: Add dist to Git
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           git add --force dist
