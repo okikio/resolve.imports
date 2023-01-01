@@ -39,14 +39,14 @@ function bail(name, entry, condition) {
 
 /**
  * @param {object} pkg package.json contents
- * @param {string} [entry] entry name or import path
+ * @param {string} entry entry name or import path
  * @param {object} [options]
  * @param {boolean} [options.browser]
  * @param {boolean} [options.require]
  * @param {string[]} [options.conditions]
  * @param {boolean} [options.unsafe]
  */
-export function resolve(pkg, entry = null, options = {}) {
+export function resolve(pkg, entry, options = {}) {
 	let { name, imports } = pkg;
 
 	if (imports) {
