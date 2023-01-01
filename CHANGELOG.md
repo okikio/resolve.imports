@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/okikio/resolve.imports/compare/v1.1.0...v1.1.1) (2023-01-01)
+
+
+### Bug Fixes
+
+* forgot to make pkg public ([3fa0663](https://github.com/okikio/resolve.imports/commit/3fa06639d40fbf3c7393d5b1085acc6b51732716))
+
 # [1.1.0](https://github.com/okikio/resolve.imports/compare/v1.0.0...v1.1.0) (2023-01-01)
 
 
