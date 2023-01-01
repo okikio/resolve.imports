@@ -1,6 +1,6 @@
 # resolve.imports [![CI](https://github.com/okikio/resolve.imports/workflows/CI/badge.svg)](https://github.com/okikio/resolve.imports/actions)
 
-> A tiny (737b), correct, general-purpose, and configurable subpath `"imports"` resolver without file-system reliance. A fork of [`resolve.exports`](https://github.com/lukeed/resolve.exports), but for `imports`.
+> A tiny (613b), correct, general-purpose, and configurable subpath `"imports"` resolver without file-system reliance. A fork of [`resolve.exports`](https://github.com/lukeed/resolve.exports), but for `imports`.
 
 > **Warning**: Unlike `resolve.exports`, `resolve.imports` doesn't have a default entry. This means that you must be explicit about the subpath to resolve
 

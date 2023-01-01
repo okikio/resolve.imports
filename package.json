@@ -2,7 +2,7 @@
   "version": "0.0.0",
   "name": "resolve.imports",
   "repository": "okikio/resolve.imports",
-  "description": "A tiny (737b), correct, general-purpose, and configurable subpath \"imports\" resolver without file-system reliance (forked from @lukeed's resolve.exports)",
+  "description": "A tiny (613b), correct, general-purpose, and configurable subpath \"imports\" resolver without file-system reliance (forked from @lukeed's resolve.exports)",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
   "types": "index.d.ts",
