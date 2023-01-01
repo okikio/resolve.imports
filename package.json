@@ -1,6 +1,6 @@
 {
   "version": "0.0.0",
-  "name": "resolve.imports",
+  "name": "@okikio/resolve.imports",
   "type": "module",
   "repository": {
     "type": "git",
