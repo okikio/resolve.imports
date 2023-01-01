@@ -46,17 +46,17 @@ function bail(name, entry, condition) {
  * @param {string[]} [options.conditions]
  * @param {boolean} [options.unsafe]
  */
-export function resolve(pkg, entry = null, options={}) {
+export function resolve(pkg, entry = null, options = {}) {
 	let { name, imports } = pkg;
 
 	if (imports) {
 		let { browser, require, unsafe, conditions=[] } = options;
 
 		if (!entry) throw new Error('Missing entry name or import path');
-		if (entry[0] !== '#') throw new Error('Entry is not a valid subpath import; the entry doesn\'t start with "#"');
+		if (entry[0] !== '#') throw new Error(`"${entry}" is not a valid subpath import; the entry doesn\'t start with "#"`);
 
 		if (typeof imports === 'string') {
-			throw new Error(`Package "imports" must be in object form and cannot be a string`);
+			throw new Error(`package.json "imports" must be an object and cannot be a string`);
 		}
 
 		let allows = new Set(['default', ...conditions]);
@@ -66,8 +66,9 @@ export function resolve(pkg, entry = null, options={}) {
 		let key, tmp;
 
 		for (key in imports) {
-			if (key[0] !== '#') 
-				throw new Error(`Package "imports" key "${key}" does not start with "#"`);
+			if (key[0] !== '#') {
+				console.warn(`package.json "imports" key "${key}" does not start with "#"`);
+			}
 		}
 
 		if (tmp = imports[entry]) {
