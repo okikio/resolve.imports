@@ -1,0 +1,52 @@
+name: Release
+on: workflow_dispatch
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+          fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+          
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          # File containing the version Spec of the version to use.  Examples: .nvmrc, .node-version, .tool-versions.
+          node-version: 18
+
+      - name: Install
+        run: |
+          npm install
+
+      - name: Pre-release
+        run: npm run build
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm run semantic-release
+
+      - name: Add lib, types and docs to Git
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          git add --force dist
+
+      - name: Commit files
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git commit -m "chore(gh-bot): :rocket: release" -a
+
+      - name: Push changes
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}

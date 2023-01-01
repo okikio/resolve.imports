@@ -1,7 +1,11 @@
 {
   "version": "0.0.0",
   "name": "resolve.imports",
-  "repository": "okikio/resolve.imports",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/okikio/resolve.imports.git"
+  },
   "description": "A tiny (613b), correct, general-purpose, and configurable subpath \"imports\" resolver without file-system reliance (forked from @lukeed's `resolve.exports`)",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
@@ -12,12 +16,16 @@
     "email": "hey@okikio.dev",
     "url": "https://okikio.dev"
   },
+  "bugs": {
+    "url": "https://github.com/okikio/resolve.imports/issues"
+  },
   "engines": {
     "node": ">=10"
   },
   "scripts": {
     "build": "bundt",
-    "test": "uvu -r esm test"
+    "test": "uvu -r esm test",
+    "semantic-release": "semantic-release"
   },
   "files": [
     "*.d.ts",
@@ -43,6 +51,51 @@
   "devDependencies": {
     "bundt": "1.1.2",
     "esm": "3.2.25",
-    "uvu": "0.5.1"
+    "uvu": "0.5.1",
+    "@commitlint/cli": "^17.1.2",
+    "@commitlint/config-conventional": "^17.1.0",
+    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "husky": "^8.0.1",
+    "semantic-release": "^19.0.5"
+  },
+  "release": {
+    "branches": [
+      "main",
+      "master"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      "@semantic-release/git",
+      "@semantic-release/npm",
+      [
+        "@semantic-release/github",
+        {
+          "assets": [
+            "*.d.ts",
+            "dist"
+          ]
+        }
+      ]
+    ]
+  },
+  "changelog": {
+    "repo": "resolve.imports",
+    "labels": {
+      "breaking": ":boom: Breaking Change",
+      "enhancement": ":rocket: Enhancement",
+      "bug": ":bug: Bug Fix",
+      "documentation": ":memo: Documentation",
+      "internal": ":house: Internal",
+      "revert": ":rewind: Revert"
+    },
+    "cacheDir": ".changelog"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS --verbose"
+    }
   }
 }
